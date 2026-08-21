@@ -177,6 +177,7 @@ Nommer les sources en conséquence : un préfixe date (`2025-03-01_…`) ou un c
 | Déploiement : « attendu : `content/<slug>.md` » pour une série **déjà supprimée** | Le cache de miniatures a restauré son dossier | Corrigé automatiquement ; si cela persiste, purger le cache dans *Actions → Caches* |
 | Le site sort **sans aucun style** | `compile_sass` désactivé — `sass/` est alors ignoré en silence | Vérifier `compile_sass = true` dans `config.toml` |
 | Le header est vide | Il n'y a qu'une seule série : les deux chevrons sont masqués | Comportement attendu |
+| En ligne : la page s'affiche **sans style ni images**, tout est en 404 | L'URL de base compilée ne correspond pas à celle où le site est publié | Le workflow la déduit désormais de GitHub Pages ; en local, vérifier `base_url` dans `config.toml` |
 
 ---
 
@@ -189,4 +190,4 @@ Le workflow `.github/workflows/deploy.yml` fait tout : il installe ses outils, *
 
 La minification n'a lieu qu'au déploiement — en local, `zola serve` continue de servir du HTML et du JavaScript lisibles. Elle allège d'environ **un tiers** ce qui est réellement transféré.
 
-`base_url` dans `config.toml` porte le sous-chemin GitHub Pages (`https://<user>.github.io/portfolio`) — à ajuster si le dépôt est renommé ou déployé ailleurs.
+**Rien à régler côté URL** : le workflow demande à GitHub Pages l'adresse réelle du site et la passe au build. Le `base_url` de `config.toml` ne sert qu'au développement local, et le déploiement l'ignore — que le site soit publié à la racine (`user.github.io`) ou sous un sous-chemin (`user.github.io/depot`).

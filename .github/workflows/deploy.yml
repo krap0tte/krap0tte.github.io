@@ -18,6 +18,11 @@ concurrency:
 
 jobs:
   deploy:
+    # Le dépôt de développement est privé et reçoit le même fichier par
+    # `bin/publish.sh` ; sans ce garde-fou, chaque poussée y déclencherait une
+    # synchronisation et un déploiement Pages qui n'existe pas. Seul le dépôt
+    # public déploie.
+    if: github.repository == 'krap0tte/krap0tte.github.io'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -26,7 +31,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # `id` : on lit sa sortie `base_url` au build, plus bas.
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v6
 
       - name: Install Zola
@@ -83,10 +90,18 @@ jobs:
           fi
 
       # Après « Sync content » : zola copie static/ tel quel dans public/.
+      #
+      # `-u` prend l'URL que GitHub Pages annonce lui-même, au lieu de faire
+      # confiance au `base_url` de config.toml. Zola écrit des URL ABSOLUES : si
+      # les deux divergent, la page se charge mais TOUT le reste part en 404 —
+      # feuille de style, script, photos. Déduire l'URL rend le site juste qu'il
+      # soit publié à la racine (`user.github.io`) ou sous un sous-chemin
+      # (`user.github.io/depot`), et survit à un renommage du dépôt.
+      #
       # `--minify` est un drapeau et non `minify_html` dans config.toml, pour que
       # `zola serve` continue de servir du HTML lisible en local.
       - name: Build
-        run: zola build --minify
+        run: zola build --minify -u "${{ steps.pages.outputs.base_url }}"
 
       # Zola ne minifie pas le JavaScript. Binaire Go autonome depuis les
       # releases GitHub, comme Zola : ni Node, ni gestionnaire de paquets.

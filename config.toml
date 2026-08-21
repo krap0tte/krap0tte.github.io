@@ -1,4 +1,7 @@
-base_url = "https://krap0tte.github.io/portfolio"
+# Sert au développement local. Le déploiement l'IGNORE : il passe à `zola build`
+# l'URL que GitHub Pages annonce (`actions/configure-pages`), pour que le site
+# soit juste quel que soit l'endroit où il est publié.
+base_url = "https://krap0tte.github.io"
 title = "krapotte"
 description = "Galerie de photographie"
 
