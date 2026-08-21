@@ -1,0 +1,147 @@
+/* ─── Lightbox ─────────────────────────────────────────────────────────────────
+   Fond aligné sur le thème clair du site, pas de scrim sombre.
+
+   `visibility` fermée n'est pas décorative : sans elle, les trois boutons de la
+   barre restent atteignables au clavier alors que la visionneuse est invisible
+   et marquée `aria-hidden` — on tabulait après la grille sur des contrôles
+   fantômes. `opacity` seule ne retire rien du parcours de tabulation.
+   Elle est transitionnable là où `display` ne l'est pas, donc le fondu
+   subsiste : même idiome que `.site-header__nav[hidden]`. */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+
+.lightbox.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.lightbox__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.lightbox__img {
+  max-width: 100%;
+  max-height: 100%;
+  transition: opacity 0.2s ease;
+}
+
+.lightbox__img.is-loading { opacity: 0; }
+
+.lightbox__loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* Le témoin a été un anneau de 22 px en trait de 1,5 px, tête à
+     `rgba(0,0,0,0.55)` : trop fin pour se voir, alors même que le fond de la
+     visionneuse est blanc opaque. C'est la finesse du trait qui l'effaçait, pas
+     ce qu'il y avait derrière. Tête à `--text`, soit 17,4:1 sur `--bg`. */
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border: 3px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: lb-spin 0.7s linear infinite;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.lightbox__loader.is-visible { opacity: 1; }
+
+/* Précédent / sortie / suivant, sur une ligne, à toutes les largeurs.
+   En FLUX, dernier enfant de la colonne flex (la scène prenant `flex: 1`), et
+   non posée par-dessus : c'est ce qui creuse l'espace sous la photo au lieu de
+   la recouvrir, sans avoir à tenir un `padding-bottom` de scène égal à la
+   hauteur de la barre. */
+.lightbox__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.25rem, 5vw, 3rem);
+  padding: 0 clamp(1rem, 3vw, 2.5rem) clamp(0.5rem, 2vw, 1.25rem);
+}
+
+/* Le rembourrage n'est pas décoratif : le symbole seul ferait 14 px, il porte
+   la cible à ~46 px — ces contrôles servent aussi au doigt.
+
+   NE PAS déclarer de `display` ici : `gallery.js` masque les deux chevrons par
+   l'attribut `hidden` quand la série n'a qu'une photo, et un `display` explicite
+   annulerait celui de la feuille du navigateur. */
+.lightbox__link {
+  padding: 1.1rem;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+
+.lightbox__link:hover { color: var(--text); }
+
+/* ─── Symboles ───────────────────────────────────────────────────────────────
+   Dessinés en CSS, aucun fichier d'icône. `currentColor` fait suivre le symbole
+   quand le survol change la couleur du bouton. Les chevrons reprennent
+   exactement la construction du header, centrage optique compris. */
+.lightbox__icon {
+  display: block;
+  margin: 0 auto;
+}
+
+.lightbox__icon--prev,
+.lightbox__icon--next {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+}
+
+.lightbox__icon--prev { transform: translateX(2px) rotate(-135deg); }
+.lightbox__icon--next { transform: translateX(-2px) rotate(45deg); }
+
+/* La sortie montre sa DESTINATION — les quatre pavés d'une grille — et non une
+   croix, qui dirait « fermer » sans dire vers quoi.
+
+   Le dessin occupe toute sa boîte (deux pseudo-éléments pour la colonne de
+   gauche, leurs ombres portées pour celle de droite) : c'est ce qui fait que
+   `margin: 0 auto` centre le dessin et non un petit carré. Sa boîte vaut
+   `0.7rem` comme celle des chevrons — c'est ce qui donne aux trois boutons la
+   même taille. Le décalage de l'ombre en dérive par `calc`. */
+.lightbox__icon--grid {
+  position: relative;
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.lightbox__icon--grid::before,
+.lightbox__icon--grid::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  box-shadow: calc(0.7rem - 4px) 0 0 currentColor;
+}
+
+.lightbox__icon--grid::before { top: 0; }
+.lightbox__icon--grid::after { bottom: 0; }
+
+@keyframes lb-spin {
+  to { transform: rotate(360deg); }
+}

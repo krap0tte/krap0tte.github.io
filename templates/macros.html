@@ -1,0 +1,24 @@
+{# Macros partagées entre gabarits.
+
+   `grid_cards` est le SEUL endroit où le balisage d'une carte est décrit. La
+   grille de la série affichée et les `<template>` des autres séries l'appellent
+   tous deux, si bien qu'une carte regénérée par le JS lors d'une bascule est
+   identique à celle rendue au build — sans qu'aucun code ne le promette. #}
+
+{% macro grid_cards(slug, names, sizes) %}
+  {%- set base = "assets/images/" ~ slug ~ "/" -%}
+  {%- for name in names %}
+  {# Vrai lien vers la pleine résolution : sans JS, le clic ouvre la photo.
+     C'est aussi lui que la lightbox lit pour connaître ses photos. #}
+  <a class="gallery-card" href="{{ get_url(path=base ~ name ~ '.webp') }}">
+    <div class="gallery-card__img-wrap">
+      {# La grille n'occupe jamais l'écran entier : on sert la miniature, et son
+         doublon 2x aux écrans denses. #}
+      <img class="gallery-card__img" alt="" loading="lazy" decoding="async"
+           srcset="{{ get_url(path=base ~ 'thumbs/' ~ name ~ '.webp') }} 1200w, {{ get_url(path=base ~ 'thumbs/' ~ name ~ '-2x.webp') }} 2400w"
+           sizes="{{ sizes }}"
+           src="{{ get_url(path=base ~ 'thumbs/' ~ name ~ '.webp') }}" />
+    </div>
+  </a>
+  {%- endfor %}
+{% endmacro grid_cards %}

@@ -1,0 +1,8 @@
+base_url = "https://krap0tte.github.io/portfolio"
+title = "krapotte"
+description = "Galerie de photographie"
+
+# Compile sass/ vers public/ (compilateur intégré au binaire Zola, pas de Node).
+# Désactivé par défaut : sans lui, sass/ est ignoré en silence et le site sort
+# sans feuille de style.
+compile_sass = true

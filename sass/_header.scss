@@ -1,0 +1,94 @@
+/* ─── Header ───────────────────────────────────────────────────────────────────
+   Deux chevrons ronds centrés sur la hauteur de la couverture — série plus
+   ancienne à gauche, plus récente à droite — et rien d'autre. Tant qu'il n'y a
+   qu'une série, les deux sont masqués et le header est visuellement vide : c'est
+   attendu.
+
+   Trois conséquences du centrage vertical, à connaître avant d'y toucher :
+   la hauteur décalque celle de `.hero` (les deux doivent rester en phase), le
+   header recouvre donc toute la couverture — d'où `pointer-events: none`, sans
+   quoi il avalerait le clic sur le chevron de défilement, qui est dessous.
+
+   Colonnes explicites et non `space-between` : un lien disparaît aux extrémités
+   de la chronologie, et `space-between` ramènerait celui qui reste à gauche. */
+.site-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100svh;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 clamp(0.75rem, 2vw, 1.5rem);
+  pointer-events: none;
+}
+
+/* La pastille n'est pas décorative, elle porte le CONTRASTE : au centre de la
+   couverture la photo n'est pas voilée (`.hero::after` n'assombrit que le haut et
+   le bas) et un chevron blanc s'y perdrait. Elle remplace un halo en dégradé
+   radial, jugé laid — un dégradé sombre sur une photo se voit comme une tache.
+
+   3rem = 48 px, au-dessus des 44 px recommandés pour une cible tactile, à toutes
+   les largeurs : le site n'a plus qu'une seule variante de navigation. */
+.site-header__nav {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  transition: opacity 0.45s ease, visibility 0.45s, background-color 0.15s ease;
+}
+
+/* Le survol fonce la pastille au lieu de faire pâlir le bouton : un contrôle qui
+   s'efface au passage de la souris est un contresens. */
+.site-header__nav:hover { background: rgba(0, 0, 0, 0.75); }
+
+.site-header__nav--prev { grid-column: 1; justify-self: start; }
+.site-header__nav--next { grid-column: 2; justify-self: end; }
+
+/* Neutralise le `display: none` que la feuille du navigateur applique à
+   `hidden` — il ne se transitionne pas, et le bouton surgirait d'un coup à
+   chaque bascule de série. Tout ce que `display: none` garantissait est rendu
+   autrement : invisible (`opacity`), hors du parcours clavier et de l'arbre
+   d'accessibilité (`visibility`), non cliquable (`pointer-events`). Retirer ces
+   trois lignes rendrait un bouton masqué focusable au clavier.
+
+   `flex` et non `block` : la même valeur qu'à l'état visible, sinon le chevron
+   cesse d'être centré à l'instant où `hidden` est posé et saute pendant le fondu.
+
+   Aucun fondu au chargement : une transition ne se joue pas sur le style initial. */
+.site-header__nav[hidden] {
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header__nav { transition: none; }
+}
+
+/* ─── Chevron ────────────────────────────────────────────────────────────────
+   Deux bordures tournées à 45°, comme dans la lightbox et sous le titre — aucun
+   fichier d'icône pour deux traits. Décoratif : c'est l'`aria-label` du lien qui
+   porte le nom accessible.
+
+   Le `translateX` corrige le centrage OPTIQUE (la matière est massée vers le coin
+   des deux bordures). Il précède la rotation pour s'appliquer dans le repère de
+   la pastille et non dans celui, tourné, du chevron. */
+.site-header__arrow {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-top: 2px solid #ffffff;
+  border-right: 2px solid #ffffff;
+}
+
+.site-header__nav--prev .site-header__arrow { transform: translateX(2px) rotate(-135deg); }
+.site-header__nav--next .site-header__arrow { transform: translateX(-2px) rotate(45deg); }

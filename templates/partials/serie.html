@@ -1,0 +1,152 @@
+{# Vue d'une série — SEULE vue du site, header compris. `index.html` lui passe
+   la série la plus récente, `page.html` la page courante ; les deux rendent donc
+   exactement le même HTML pour une même série, ce qui permet au JS d'échanger
+   l'une pour l'autre sans rechargement.
+
+   Attend `serie` dans le contexte. #}
+
+
+{% set data = load_data(path="data/photos.toml") %}
+{% set all_series = get_section(path="_index.md") %}
+
+{# De la plus récente à la plus ancienne. Le modèle ne porte aucune date :
+   l'ordre vient de `latest`, le nom de fichier le plus récent de la série. #}
+{% set ordered = data.series | sort(attribute="latest") | reverse %}
+
+{# Position de la série courante, puis ses deux voisines. Partout ici, une
+   résolution slug → page se fait en bouclant sur un `filter` plutôt qu'avec
+   `| first` : une série sans page appariée est alors sautée au lieu d'être
+   déréférencée, et une série sans photo est un état légitime du flux d'ajout. #}
+{% set_global cur = -1 %}
+{% for e in ordered %}{% if e.slug == serie.slug %}{% set_global cur = loop.index0 %}{% endif %}{% endfor %}
+{% set_global older_slug = "" %}
+{% set_global newer_slug = "" %}
+{% for e in ordered %}
+  {%- if loop.index0 == cur + 1 %}{% set_global older_slug = e.slug %}{% endif -%}
+  {%- if cur > 0 and loop.index0 == cur - 1 %}{% set_global newer_slug = e.slug %}{% endif -%}
+{% endfor %}
+{% set_global older_url = "" %}
+{% set_global newer_url = "" %}
+{% for p in all_series.pages | filter(attribute="slug", value=older_slug) %}{% set_global older_url = p.permalink %}{% endfor %}
+{% for p in all_series.pages | filter(attribute="slug", value=newer_slug) %}{% set_global newer_url = p.permalink %}{% endfor %}
+
+{# Les deux liens sont TOUJOURS dans le DOM, `hidden` faisant la différence :
+   omettre celui qui n'a pas lieu d'être le rendrait introuvable au JS, qui ne
+   pourrait plus jamais le faire apparaître en basculant de série.
+   Le chevron étant décoratif, l'`aria-label` est le seul nom accessible du lien. #}
+<header class="site-header">
+  <a class="site-header__nav site-header__nav--prev" data-serie-nav="older"
+     aria-label="Précédente série"
+     href="{{ older_url | safe }}"{% if older_url == "" %} hidden{% endif %}>
+    <span class="site-header__arrow" aria-hidden="true"></span>
+  </a>
+
+  <a class="site-header__nav site-header__nav--next" data-serie-nav="newer"
+     aria-label="Série suivante"
+     href="{{ newer_url | safe }}"{% if newer_url == "" %} hidden{% endif %}>
+    <span class="site-header__arrow" aria-hidden="true"></span>
+  </a>
+</header>
+
+<main>
+  <section class="hero">
+    {% set h = "assets/images/" ~ serie.slug ~ "/" ~ serie.extra.hero ~ ".webp" %}
+    {# `fetchpriority` : la page ne montre rien d'autre tant que la couverture
+       n'est pas décodée, alors que le navigateur la classerait au même rang que
+       les miniatures, pourtant sous la ligne de flottaison. #}
+    <img class="hero__img" src="{{ get_url(path=h) }}" alt="" fetchpriority="high" />
+    <div class="hero__bottom">
+      <h1 class="hero__title">{{ serie.title }}</h1>
+      {# Bouton et non lien d'ancre : il n'y a rien à mettre en signet. #}
+      <button class="hero__scroll" type="button" data-scroll-down aria-label="Faire défiler vers la description">
+        <span class="hero__scroll-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+  </section>
+
+  {# Toujours présente, `hidden` sans texte — même raison que les liens ci-dessus. #}
+  <section class="series-intro"{% if not serie.content %} hidden{% endif %}>{{ serie.content | safe }}</section>
+
+  {# Grille rendue AU BUILD : le scanner de préchargement du navigateur ne voit
+     que le HTML et lance les téléchargements avant même d'analyser le CSS et le
+     JS, ce qu'il ne peut pas faire pour des images créées en JavaScript.
+     Les paliers de `sizes` redisent ceux du CSS (_gallery.scss) : les changer
+     d'un côté seulement fait servir la mauvaise variante, sans rien casser de
+     visible. #}
+  {% set grid_sizes = "(min-width: 2000px) 16vw, (min-width: 1600px) 19vw, (min-width: 1280px) 24vw, (min-width: 1024px) 32vw, 46vw" %}
+  <section class="gallery-grid">
+    <div class="gallery-grid__container">
+      {%- for e in data.series | filter(attribute="slug", value=serie.slug) -%}
+        {{ macros::grid_cards(slug=serie.slug, names=e.photos | reverse, sizes=grid_sizes) }}
+      {%- endfor -%}
+    </div>
+  </section>
+
+  <div class="lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Visionneuse photo">
+    <div class="lightbox__stage">
+      <div class="lightbox__loader" aria-hidden="true"></div>
+      <img class="lightbox__img" alt="" />
+    </div>
+
+    {# Frères de la scène et non posés par-dessus : la barre occupe sa propre
+       ligne dans la colonne flex, ce qui creuse l'espace sous la photo au lieu
+       de la recouvrir — et le glissement, câblé sur la scène, ne peut pas partir
+       d'un appui sur un bouton. Symboles décoratifs : là encore l'`aria-label`
+       est le seul nom accessible. #}
+    <div class="lightbox__controls">
+      <button class="lightbox__link" type="button" data-lb="prev" aria-label="Photo précédente">
+        <span class="lightbox__icon lightbox__icon--prev" aria-hidden="true"></span>
+      </button>
+      <button class="lightbox__link" type="button" data-lb="grid" aria-label="Revenir à la grille de la série">
+        <span class="lightbox__icon lightbox__icon--grid" aria-hidden="true"></span>
+      </button>
+      <button class="lightbox__link" type="button" data-lb="next" aria-label="Photo suivante">
+        <span class="lightbox__icon lightbox__icon--next" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</main>
+
+{# Ce qu'il faut au JS pour basculer de série sans requête : le nom du site (pour
+   recomposer le `<title>` à l'identique des gabarits), la série affichée, et de
+   quoi peindre l'en-tête de chaque série. Les photos n'y sont PAS : elles vivent
+   dans les grilles ci-dessous, que la lightbox lit directement.
+
+   Les séparateurs viennent d'un drapeau et non de `loop.last` : dans la boucle
+   interne, `loop` désigne le `filter`, toujours d'un seul élément — aucune
+   virgule n'était émise et le JSON devenait invalide dès la deuxième série. #}
+<script id="site-data" type="application/json">
+{
+  "site": {{ config.title | json_encode | safe }},
+  "current": {{ serie.slug | json_encode | safe }},
+  "series": [
+{%- set_global sep = "" %}
+{%- for e in ordered %}
+  {%- for p in all_series.pages | filter(attribute="slug", value=e.slug) %}
+  {{ sep | safe }}{% set_global sep = "," %}
+  {
+    "slug": {{ p.slug | json_encode | safe }},
+    "title": {{ p.title | json_encode | safe }},
+    "url": {{ p.permalink | json_encode | safe }},
+    "hero": {{ get_url(path="assets/images/" ~ p.slug ~ "/" ~ p.extra.hero ~ ".webp") | json_encode | safe }}
+  }
+  {%- endfor %}
+{%- endfor %}
+  ]
+}
+</script>
+
+{# Grilles et textes d'intro de toutes les séries, en `<template>` : du HTML dans
+   du HTML, donc aucun échappement à faire, et rien n'est rendu ni téléchargé
+   tant que le JS n'y touche pas. C'est ce qui permet à `renderGrid()` de n'être
+   qu'une affectation — et au balisage d'une carte de n'exister qu'en un seul
+   endroit, la macro. La série affichée a elle aussi sa grille ici : sans elle,
+   on ne pourrait pas y revenir après en être parti. #}
+{%- for e in ordered %}
+  {%- for p in all_series.pages | filter(attribute="slug", value=e.slug) %}
+<template data-serie-grid="{{ p.slug }}">{{ macros::grid_cards(slug=p.slug, names=e.photos | reverse, sizes=grid_sizes) }}</template>
+    {%- if p.content %}
+<template data-serie-intro="{{ p.slug }}">{{ p.content | safe }}</template>
+    {%- endif %}
+  {%- endfor %}
+{%- endfor %}

@@ -1,0 +1,11 @@
+/* ─── Thème ────────────────────────────────────────────────────────────────────
+   Thème clair fixe, pas de bascule. Custom properties et non variables Sass :
+   celles-ci seraient résolues à la compilation, on perdrait l'héritage. */
+:root {
+  --bg:            #ffffff;
+  /* Fond de la couverture pendant son chargement — voir le fondu d'entrée dans
+     _hero.scss. */
+  --bg-void:       #1a1a18;
+  --text:          #1a1a18;
+  --text-muted:    #6e6e6b;
+}

@@ -1,0 +1,124 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  # `write` : l'étape « Sync content » réécrit dans le dépôt (photos converties,
+  # data/photos.toml). En `read`, elle échouerait à la poussée.
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Install Zola
+        env:
+          ZOLA_VERSION: 0.22.1
+        run: |
+          curl -sL "https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+            | sudo tar xz -C /usr/local/bin zola
+
+      # À restaurer AVANT « Sync content », qui génère les miniatures.
+      # `restore-keys` n'est pas décoratif : la clé porte sur les photos déjà
+      # versionnées, donc celles ajoutées dans ce run lui échappent. Sans repli,
+      # tout serait régénéré à chaque ajout.
+      # En contrepartie, le repli peut restaurer les miniatures d'une série
+      # supprimée depuis. `bin/add-photo.sh` sait les ignorer puis les jeter —
+      # ne pas retirer ce filtre en croyant simplifier son inventaire.
+      - name: Cache thumbnails
+        uses: actions/cache@v6
+        with:
+          path: static/assets/images/*/thumbs
+          key: thumbs-${{ hashFiles('static/assets/images/*/*.webp') }}
+          restore-keys: thumbs-
+
+      # `libheif-examples` fournit `heif-convert` : cwebp ne décode pas le HEIC.
+      - name: Install image tools
+        run: sudo apt-get update && sudo apt-get install -y webp libheif-examples
+
+      # Appelle le script de l'auteur plutôt que d'en rejouer la logique ici :
+      # une seule implémentation, deux appelants.
+      #
+      # `bin/add-photo.sh` est HORS du `if` : un contenu incohérent doit arrêter
+      # le déploiement, pas déclencher une reprise. Seule la poussée est
+      # réessayée, et par recalcul plutôt que par rebase — ce que le script
+      # produit est dérivé, et les commits de l'auteur sont déjà sur le remote.
+      - name: Sync content
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          commit_and_push() {
+            [ -n "$(git status --porcelain)" ] || { echo "rien à synchroniser"; return 0; }
+            git add -A static/assets/images data/photos.toml
+            git commit -m "Synchronise les photos (conversion WebP, data/photos.toml)"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          }
+
+          bin/add-photo.sh
+          if ! commit_and_push; then
+            echo "poussée refusée — reprise depuis la pointe distante"
+            git fetch --depth=1 origin "$GITHUB_REF_NAME"
+            git reset --hard FETCH_HEAD
+            bin/add-photo.sh
+            commit_and_push
+          fi
+
+      # Après « Sync content » : zola copie static/ tel quel dans public/.
+      # `--minify` est un drapeau et non `minify_html` dans config.toml, pour que
+      # `zola serve` continue de servir du HTML lisible en local.
+      - name: Build
+        run: zola build --minify
+
+      # Zola ne minifie pas le JavaScript. Binaire Go autonome depuis les
+      # releases GitHub, comme Zola : ni Node, ni gestionnaire de paquets.
+      - name: Minify JavaScript
+        env:
+          MINIFY_VERSION: 2.24.17
+        run: |
+          curl -sL "https://github.com/tdewolff/minify/releases/download/v${MINIFY_VERSION}/minify_linux_amd64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin minify
+
+          for f in public/js/*.js; do
+            # Fichier tiers puis `mv` : le remplacement est atomique.
+            minify --type js -o "$f.min" "$f"
+
+            # Un minifieur qui échoue à écrire laisserait la source intacte sans
+            # rien signaler — on livrerait du JavaScript non minifié en silence.
+            before=$(wc -c < "$f")
+            after=$(wc -c < "$f.min")
+            if [ "$after" -le 0 ] || [ "$after" -ge "$before" ]; then
+              echo "::error::minification sans effet sur $f ($before → $after octets)"
+              exit 1
+            fi
+
+            mv "$f.min" "$f"
+            echo "$f : $before → $after octets"
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

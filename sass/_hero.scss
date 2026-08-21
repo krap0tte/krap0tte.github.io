@@ -1,0 +1,153 @@
+/* ─── Couverture pleine fenêtre ────────────────────────────────────────────────
+   Toute page du site s'ouvre dessus. `svh` évite le saut dû à la barre d'adresse
+   mobile, `vh` reste en repli.
+
+   Cette hauteur est décalquée par `.site-header`, qui s'y superpose : si l'une
+   change, l'autre doit suivre. */
+.hero {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  /* Fond que découvre le fondu d'entrée. Porté par `.hero` et non par
+     `.hero__img`, qui est justement l'élément rendu transparent. Sombre parce
+     que le titre et les chevrons sont blancs et déjà peints quand la photo ne
+     l'est pas encore. */
+  background: var(--bg-void);
+}
+
+.hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Voile : le titre est posé sur une photo quelconque, il lui faut un fond
+   garanti. Ne pas l'étendre pour les chevrons du header — il ne sait pas de quel
+   côté un chevron existe, et assombrissait le flanc droit de l'accueil, qui n'en
+   a pas. Ils portent leur propre pastille (_header.scss). */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 25%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0) 35%);
+  pointer-events: none;
+}
+
+/* C'est ce bloc qui porte le positionnement ; le titre ne fait que de la
+   typographie. */
+.hero__bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+/* `font-weight` est déclaré bien qu'il vaille celui du body : un `<h1>` porte le
+   gras de la feuille du navigateur, qu'il faut neutraliser.
+
+   Le corps est borné par la HAUTEUR autant que par la largeur. En `6vw` seul, une
+   fenêtre courte (mobile en paysage) faisait passer le titre sur deux lignes, où
+   il dépassait le voile ci-dessus — titre blanc sur photo nue. */
+.hero__title {
+  max-width: 60vw;
+  text-align: center;
+  color: #ffffff;
+  font-size: clamp(2rem, min(6vw, 9vh), 4.5rem);
+  font-size: clamp(2rem, min(6vw, 9svh), 4.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+/* Appel à l'action principal du site : c'est par là qu'on entre dans la série.
+   Il prime sur les chevrons du header par le trait et le balancement, pas par un
+   fond — délibérément nu, comme le titre au-dessus. Ne pas lui remettre de
+   pastille sans redemander.
+
+   Les 3,5rem sont la cible tactile, pas un décor : ils restent transparents. */
+.hero__scroll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  transition: opacity 0.15s ease;
+}
+
+.hero__scroll:hover { opacity: 0.7; }
+
+/* Le `translateY` corrige le centrage optique : la matière du chevron est massée
+   vers le coin des deux bordures, donc décalée une fois tournée. Placé avant la
+   rotation pour s'appliquer dans le repère du bouton. */
+.hero__scroll-arrow {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-right: 2.5px solid #ffffff;
+  border-bottom: 2.5px solid #ffffff;
+  transform: translateY(-3px) rotate(45deg);
+  animation: hero-scroll-bob 1.8s ease-in-out infinite;
+}
+
+/* Le balancement porte sur le CHEVRON, jamais sur le bouton : animer le bouton
+   ferait glisser la cible de clic en permanence, au point qu'elle ne s'immobilise
+   jamais.
+
+   Les images-clés répètent `rotate(45deg)` et le décalage optique — une animation
+   de `transform` remplace la propriété entière au lieu de s'y ajouter. */
+@keyframes hero-scroll-bob {
+  0%, 100% { transform: translateY(-3px) rotate(45deg); }
+  50%      { transform: translateY(4px) rotate(45deg); }
+}
+
+/* Doit viser le porteur de l'animation : si le balancement change d'élément, ce
+   sélecteur doit suivre, sinon la coupure ne coupe plus rien. */
+@media (prefers-reduced-motion: reduce) {
+  .hero__scroll-arrow { animation: none; }
+}
+
+/* ─── Fondu d'entrée ──────────────────────────────────────────────────────────
+   `gallery.js` pose `is-revealed` quand la photo est décodée. Tout est
+   conditionné à `.js` (posée dans le <head> par base.html) : sans JavaScript,
+   personne ne révélerait rien et la couverture resterait invisible.
+
+   Les transitions sont déclarées sur l'état RÉVÉLÉ, pas sur l'état de base.
+   À l'aller elles jouent ; au retour — la bascule de série, où le JS retire la
+   classe avant de changer la source — le masquage est instantané. Déclarées sur
+   l'état de base, la couverture sortante s'effacerait en fondu pendant que la
+   suivante charge, et la nouvelle photo surgirait à mi-opacité. */
+.js .hero__img { opacity: 0; }
+
+.js .hero.is-revealed .hero__img {
+  opacity: 1;
+  transition: opacity 0.7s ease;
+}
+
+.js .hero__bottom {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+
+/* Le retard vaut la durée du fondu de la photo : le titre entre pendant qu'elle
+   finit d'apparaître, il ne monte pas avec elle. */
+.js .hero.is-revealed .hero__bottom {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.45s ease 0.45s, transform 0.45s ease 0.45s;
+}
+
+/* On supprime le mouvement, pas l'attente : la photo apparaît toujours d'un
+   coup, une fois décodée. */
+@media (prefers-reduced-motion: reduce) {
+  .js .hero__bottom { transform: none; }
+
+  .js .hero.is-revealed .hero__img,
+  .js .hero.is-revealed .hero__bottom { transition: none; }
+}

@@ -1,0 +1,19 @@
+// ─── Points de rupture ───────────────────────────────────────────────────────
+// Seul fichier de ce dossier à n'émettre aucun CSS, d'où son absence des `@use`
+// de style.scss : les partials qui s'en servent l'importent eux-mêmes.
+//
+// Une seule famille de paliers subsiste, celle du nombre de colonnes de la
+// grille. Ces valeurs sont redites dans l'attribut `sizes` de
+// partials/serie.html : changer un palier ici sans l'y reporter fait télécharger
+// la mauvaise variante d'image, sans que rien ne casse visiblement.
+
+$bp-lg: 1024px;
+$bp-xl: 1280px;
+$bp-2xl: 1600px;
+$bp-3xl: 2000px;
+
+@mixin from($bp) {
+  @media (min-width: $bp) {
+    @content;
+  }
+}

@@ -1,0 +1,19 @@
+// ─── Feuille de style du site ────────────────────────────────────────────────
+// Compilée par Zola vers public/style.css.
+//
+// Zola calque l'arborescence de `sass/` sur la racine de `public/` : déplacer ce
+// fichier dans un sous-dossier changerait l'URL de sortie, donc le `get_url()`
+// de base.html ET les `url()` des @font-face, résolues depuis la feuille
+// compilée.
+//
+// L'ordre des @use est l'ordre d'émission, donc l'ordre de CASCADE : du plus
+// général au plus spécifique. Ne pas réordonner sans vérifier les surcharges.
+
+@use 'fonts';
+@use 'theme';
+@use 'reset';
+@use 'header';
+@use 'hero';
+@use 'series';
+@use 'gallery';
+@use 'lightbox';

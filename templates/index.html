@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{# L'accueil affiche la série la plus récente — même vue, même HTML qu'à son URL
+   propre. L'ordre vient de `latest`, le modèle ne portant aucune date.
+
+   LA SÉLECTION VIT DANS LE BLOC `title`, PAS DANS `body` où la série est
+   pourtant rendue — ne pas la « remettre au bon endroit ». Le `<title>` doit
+   nommer la série visible, or base.html rend `title` avant `body` ; et en Tera,
+   un `set_global` posé hors bloc dans un gabarit qui `extends` n'est jamais
+   exécuté, tandis que posé dans un bloc il survit aux blocs suivants. C'est donc
+   le seul endroit d'où choisir la série une fois pour les deux.
+
+   Le `break` n'a lieu que si une série a été trouvée : un dossier de photos plus
+   récent que tous les autres mais pas encore apparié à son `.md` — état
+   transitoire du flux d'ajout — arrêterait sinon la boucle sur lui et rendrait
+   un accueil vide, sans que le build échoue. #}
+{%- block title -%}
+  {%- set data = load_data(path="data/photos.toml") -%}
+  {%- set_global serie = false -%}
+  {%- for e in data.series | sort(attribute="latest") | reverse -%}
+    {%- for p in section.pages | filter(attribute="slug", value=e.slug) -%}
+      {%- set_global serie = p -%}
+    {%- endfor -%}
+    {%- if serie %}{% break %}{% endif -%}
+  {%- endfor -%}
+  {%- if serie %}{{ serie.title }} — {{ config.title }}{% else %}{{ config.title }}{% endif -%}
+{%- endblock title -%}
+
+{# Même règle que le `<title>` : la description nomme la série visible, comme le
+   fait `page.html` à l'URL propre. `serie` vient du bloc `title`, rendu juste
+   avant celui-ci. Repli sur `config.description` si aucune série n'est
+   appariée, seul cas où l'accueil ne montre rien. #}
+{% block description %}{% if serie %}{{ serie.title }}{% else %}{{ config.description }}{% endif %}{% endblock description %}
+
+{% block body %}
+{% if serie %}{% include "partials/serie.html" %}{% endif %}
+{% endblock body %}

@@ -1,0 +1,42 @@
+@use 'breakpoints' as *;
+
+/* ─── Grille ───────────────────────────────────────────────────────────────────
+   Masonry en colonnes CSS et non en `grid` : chaque miniature garde son ratio
+   naturel. 2 → 6 colonnes selon la largeur. */
+.gallery-grid {
+  padding: 0 clamp(1rem, 3vw, 2.5rem) clamp(1rem, 3vw, 2.5rem);
+}
+
+.gallery-grid__container {
+  columns: 2;
+  column-gap: 1rem;
+}
+
+@include from($bp-lg)  { .gallery-grid__container { columns: 3; } }
+@include from($bp-xl)  { .gallery-grid__container { columns: 4; } }
+@include from($bp-2xl) { .gallery-grid__container { columns: 5; } }
+@include from($bp-3xl) { .gallery-grid__container { columns: 6; } }
+
+/* ─── Carte ────────────────────────────────────────────────────────────────── */
+/* `break-inside` : c'est lui qui empêche une carte d'être coupée entre deux
+   colonnes du masonry. */
+.gallery-card {
+  display: block;
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+.gallery-card__img-wrap {
+  overflow: hidden;
+}
+
+/* La transition sert le SURVOL, pas le chargement : rien n'orchestre l'arrivée
+   des miniatures, le navigateur les peint dès qu'elles arrivent. */
+.gallery-card__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: opacity 0.35s ease;
+}
+
+.gallery-card__img:hover { opacity: 0.88; }

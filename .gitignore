@@ -1,0 +1,8 @@
+.DS_Store
+
+# Sortie générée par `zola build`
+/public
+
+# Miniatures dérivées des photos — régénérables par bin/build-thumbs.sh, que le
+# workflow de déploiement lance de son côté. Elles ne sont donc pas versionnées.
+/static/assets/images/*/thumbs/

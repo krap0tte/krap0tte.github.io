@@ -1,0 +1,50 @@
+/* ─── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* `100%` et non `16px` : même valeur, mais en pourcent le site suit le réglage
+   de taille de police du navigateur au lieu de le neutraliser.
+
+   `scrollbar-gutter` réserve la gouttière en permanence. Sans elle, l'ouverture
+   de la lightbox (qui pose `overflow: hidden` sur le body) fait disparaître la
+   barre et TOUT se redispose derrière la visionneuse — invisible sur les
+   navigateurs à barres en superposition, d'où un défaut « qui n'arrive que sur
+   certains navigateurs ». Préféré à la compensation JavaScript classique :
+   aucun état à tenir, et ça vaudra pour tout futur verrouillage du défilement. */
+html {
+  font-size: 100%;
+  scrollbar-gutter: stable;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Jost', 'Helvetica Neue', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul, ol { list-style: none; }
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}

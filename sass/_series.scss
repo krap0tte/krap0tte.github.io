@@ -1,0 +1,22 @@
+/* ─── Séries ─────────────────────────────────────────────────────────────────
+   Le texte éditorial, entre la couverture et la grille.
+
+   Trois unités à ne pas « normaliser » : la justure est en `ch` parce qu'elle se
+   compte en signes par ligne et non en pixels — en `rem`, doubler le corps la
+   faisait tomber de ~75 à ~39 signes. Le corps lui-même est fluide et non fixé à
+   son plafond : sur téléphone `max-width` ne borne plus rien, et un 32px figé
+   tombait à 23 signes par ligne — l'intro se lisait comme un titre. */
+.series-intro {
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 3vw, 2.5rem);
+  max-width: 64ch;
+  margin: 0 auto;
+  text-align: center;
+  font-size: clamp(1.13rem, 2.5vw, 2rem);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* `em` et non `rem` : l'écart entre paragraphes doit suivre le corps du texte.
+   En `rem` il restait figé à 12px pendant que le texte doublait, ce qui serrait
+   les paragraphes à mesure qu'on grossissait l'intro. */
+.series-intro p + p { margin-top: 0.75em; }

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}krapotte{% endblock title %}</title>
+  <meta name="description" content="{% block description %}Galerie de photographie{% endblock description %}" />
+  {# Crochet de tout ce que le CSS masque en attendant que le JS le révèle —
+     aujourd'hui la seule couverture. Sans lui, une page sans JavaScript
+     resterait vide.
+
+     Inline et dans le <head>, donc AVANT la première peinture : posé depuis
+     gallery.js (fin de <body>), le navigateur pourrait avoir déjà peint une
+     couverture en cache, qui disparaîtrait pour revenir aussitôt en fondu. #}
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="stylesheet" href="{{ get_url(path="style.css") }}" />
+</head>
+<body>
+  {# Le corps entier (header compris) vient de partials/serie.html : la
+     navigation entre séries vit dans le header, elle dépend donc de la série
+     courante et ne peut pas être figée ici. base.html ne garde que l'enveloppe
+     du document et le chargement des scripts. #}
+  {% block body %}{% endblock body %}
+
+  <script src="{{ get_url(path="js/gallery.js") }}"></script>
+</body>
+</html>

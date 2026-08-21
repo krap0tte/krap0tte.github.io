@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{# Même composition qu'index.html, et que `serieNav` dans gallery.js : les trois
+   doivent produire une chaîne identique, sinon un rechargement après bascule
+   changerait le titre sous les yeux du visiteur. #}
+{% block title %}{{ page.title }} — {{ config.title }}{% endblock title %}
+{% block description %}{{ page.title }}{% endblock description %}
+
+{# Une série à son URL propre. Même vue que l'accueil, au détail près de la
+   série affichée — d'où le partial partagé. #}
+{% block body %}
+{% set_global serie = page %}
+{% include "partials/serie.html" %}
+{% endblock body %}
