@@ -33,18 +33,34 @@
 {# Les deux liens sont TOUJOURS dans le DOM, `hidden` faisant la différence :
    omettre celui qui n'a pas lieu d'être le rendrait introuvable au JS, qui ne
    pourrait plus jamais le faire apparaître en basculant de série.
-   Le chevron étant décoratif, l'`aria-label` est le seul nom accessible du lien. #}
+
+   Chaque libellé est écrit UNE fois et sert deux rôles : l'`aria-label`, seul
+   nom accessible du lien (le chevron est décoratif), et le texte affiché à
+   partir du palier desktop, où la pastille s'allonge en pill. Le `<span>` est
+   `aria-hidden` : sans cela le lecteur d'écran annoncerait deux fois la même
+   chose. Les deux chaînes doivent rester identiques — c'est ce que demande le
+   critère « le nom accessible contient le libellé visible ». #}
+{% set prev_label = "Série précédente" %}
+{% set next_label = "Série suivante" %}
 <header class="site-header">
   <a class="site-header__nav site-header__nav--prev" data-serie-nav="older"
-     aria-label="Précédente série"
+     aria-label="{{ prev_label }}"
      href="{{ older_url | safe }}"{% if older_url == "" %} hidden{% endif %}>
     <span class="site-header__arrow" aria-hidden="true"></span>
+    <span class="site-header__label" aria-hidden="true">{{ prev_label }}</span>
   </a>
 
+  {# La marque pointe l'accueil, qui EST la série la plus récente. Sur l'accueil
+     lui-même, `wireHeader()` intercepte le clic pour remonter en douceur plutôt
+     que recharger une page identique — il compare des chemins normalisés, cette
+     URL n'ayant pas de barre finale. #}
+  <a class="site-header__brand" href="{{ get_url(path="/") }}">krapotte</a>
+
   <a class="site-header__nav site-header__nav--next" data-serie-nav="newer"
-     aria-label="Série suivante"
+     aria-label="{{ next_label }}"
      href="{{ newer_url | safe }}"{% if newer_url == "" %} hidden{% endif %}>
     <span class="site-header__arrow" aria-hidden="true"></span>
+    <span class="site-header__label" aria-hidden="true">{{ next_label }}</span>
   </a>
 </header>
 
@@ -58,7 +74,7 @@
     <div class="hero__bottom">
       <h1 class="hero__title">{{ serie.title }}</h1>
       {# Bouton et non lien d'ancre : il n'y a rien à mettre en signet. #}
-      <button class="hero__scroll" type="button" data-scroll-down aria-label="Faire défiler vers la description">
+      <button class="hero__scroll" type="button" data-scroll-down aria-label="Découvrir la série">
         <span class="hero__scroll-arrow" aria-hidden="true"></span>
       </button>
     </div>
@@ -85,7 +101,13 @@
   <div class="lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Visionneuse photo">
     <div class="lightbox__stage">
       <div class="lightbox__loader" aria-hidden="true"></div>
-      <img class="lightbox__img" alt="" />
+      {# Un `<img>` sans `src` n'est pas conforme (erreur du validateur W3C) : le
+         gabarit sert donc un GIF 1×1 transparent, qui ne peint rien. Il n'est de
+         toute façon jamais affiché — `update()` substitue un élément neuf dès la
+         première ouverture, et c'est bien un `<img>` SANS `src` que le JS
+         installe entre deux photos (voir CLAUDE.md, la scène doit s'ouvrir vide). #}
+      <img class="lightbox__img" alt=""
+           src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
     </div>
 
     {# Frères de la scène et non posés par-dessus : la barre occupe sa propre
@@ -97,7 +119,7 @@
       <button class="lightbox__link" type="button" data-lb="prev" aria-label="Photo précédente">
         <span class="lightbox__icon lightbox__icon--prev" aria-hidden="true"></span>
       </button>
-      <button class="lightbox__link" type="button" data-lb="grid" aria-label="Revenir à la grille de la série">
+      <button class="lightbox__link" type="button" data-lb="grid" aria-label="Revenir à la grille">
         <span class="lightbox__icon lightbox__icon--grid" aria-hidden="true"></span>
       </button>
       <button class="lightbox__link" type="button" data-lb="next" aria-label="Photo suivante">

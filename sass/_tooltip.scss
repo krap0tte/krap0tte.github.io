@@ -1,0 +1,101 @@
+@use 'breakpoints' as *;
+
+/* ─── Info-bulles ──────────────────────────────────────────────────────────────
+   Aucun bouton du site n'a de texte visible : chevrons du header, invite au
+   défilement, contrôles de la lightbox sont tous des symboles dessinés en CSS.
+   Au survol, chacun annonce donc ce qu'il fait.
+
+   Le texte n'est PAS écrit une seconde fois : `attr(aria-label)` lit le nom
+   accessible déjà porté par le bouton, seule source. Changer un libellé change
+   les deux d'un coup, et il ne peut pas y avoir de divergence — c'est aussi
+   pourquoi ce n'est pas l'attribut `title` : il ferait doublon avec
+   l'`aria-label` (certains lecteurs d'écran annoncent les deux) et son apparence
+   comme son délai appartiennent au système, pas au site.
+
+   Le sélecteur exige `[aria-label]` : sans lui, un bouton qui perdrait son
+   libellé afficherait une bulle vide au lieu de ne rien afficher.
+
+   Tout est sous `hover: hover` — sur écran tactile, `:hover` reste collé après
+   un appui, et la bulle survivrait au geste. Le clavier n'y perd rien : les
+   appareils à pointeur sont aussi ceux qui ont un clavier. */
+@media (hover: hover) {
+  .site-header__nav[aria-label],
+  .hero__scroll[aria-label],
+  .lightbox__link[aria-label] {
+    position: relative;
+  }
+
+  /* Au-DESSUS du bouton : l'invite au défilement et les contrôles de la lightbox
+     sont tous deux en bas de fenêtre, une bulle sous eux sortirait de l'écran.
+     `pointer-events: none` parce qu'elle déborde largement de son bouton : elle
+     capterait sinon le survol des cartes voisines. */
+  .site-header__nav[aria-label]::after,
+  .hero__scroll[aria-label]::after,
+  .lightbox__link[aria-label]::after {
+    content: attr(aria-label);
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.3rem 0.55rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  /* Seule exception au placement au-dessus : l'invite au défilement, qui a le
+     titre de la série juste au-dessus d'elle et le percutait. En dessous, elle
+     tombe dans le rembourrage bas de la couverture — il vaut 4vw à ces largeurs,
+     largement de quoi la loger. */
+  .hero__scroll[aria-label]::after {
+    top: calc(100% + 0.4rem);
+    bottom: auto;
+  }
+
+  /* Les deux boutons du header sont collés aux bords de la fenêtre : centrée sur
+     un bouton de 48 px, une bulle de ~130 px déborderait de l'écran. Elle
+     s'aligne donc sur le bord intérieur du bouton plutôt que sur son centre. */
+  .site-header__nav--prev[aria-label]::after {
+    left: 0;
+    transform: none;
+  }
+
+  .site-header__nav--next[aria-label]::after {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .site-header__nav[aria-label]:hover::after,
+  .site-header__nav[aria-label]:focus-visible::after,
+  .hero__scroll[aria-label]:hover::after,
+  .hero__scroll[aria-label]:focus-visible::after,
+  .lightbox__link[aria-label]:hover::after,
+  .lightbox__link[aria-label]:focus-visible::after {
+    opacity: 1;
+  }
+
+  /* À partir du palier desktop, les deux boutons de série portent leur libellé
+     à l'écran (voir la pill dans _header.scss) : une bulle le répéterait. Cette
+     règle doit vivre ICI et non dans _header.scss — à sélecteur de même poids,
+     c'est le partial émis en DERNIER qui l'emporte, et `tooltip` est le dernier
+     `@use` de style.scss. */
+  @include from($bp-lg) {
+    .site-header__nav[aria-label]::after { content: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-header__nav[aria-label]::after,
+    .hero__scroll[aria-label]::after,
+    .lightbox__link[aria-label]::after {
+      transition: none;
+    }
+  }
+}

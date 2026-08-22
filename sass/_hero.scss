@@ -24,14 +24,28 @@
 /* Voile : le titre est posé sur une photo quelconque, il lui faut un fond
    garanti. Ne pas l'étendre pour les chevrons du header — il ne sait pas de quel
    côté un chevron existe, et assombrissait le flanc droit de l'accueil, qui n'en
-   a pas. Ils portent leur propre pastille (_header.scss). */
+   a pas. Ils portent leur propre pastille (_header.scss).
+
+   TROIS couches, dont la dernière est plate : les deux dégradés garantissent le
+   contraste du titre en bas et de la marque en haut, la couleur de fond
+   assombrit la couverture ENTIÈRE de 15 % (demandé le 2026-08-22). Une couche
+   noire à `a` d'opacité donne exactement le même résultat qu'un
+   `filter: brightness(1 - a)` sur l'image — même multiplication par canal — mais
+   sans promouvoir l'image en couche de compositing, ce dont son fondu d'entrée
+   se passe volontiers. Elle vient en dernier dans la liste : la couleur de fond
+   se peint toujours sous les dégradés.
+
+   Le texte n'est PAS assombri au passage : `.hero__bottom` (z-index 1) et le
+   header (z-index 2) sont au-dessus de ce voile. L'assombrissement leur profite
+   donc en contraste. */
 .hero::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
     linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 25%),
-    linear-gradient(to top, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0) 35%);
+    linear-gradient(to top, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0) 35%),
+    rgba(0, 0, 0, 0.15);
   pointer-events: none;
 }
 

@@ -474,6 +474,25 @@
     });
   }
 
+  // ─── Marque ─────────────────────────────────────────────────────────────────
+  // Elle pointe l'accueil, qui EST la série la plus récente. Depuis l'accueil,
+  // recharger une page identique pour ne rien changer serait un contresens : on
+  // remonte en douceur à la place. La comparaison porte sur `pathname`, mis à
+  // jour par le `pushState` de `serieNav` — cliquer la marque après une bascule
+  // navigue donc bien vers l'accueil.
+  function wireHeader() {
+    var brand = document.querySelector('.site-header__brand');
+    if (!brand) return;
+    brand.addEventListener('click', function (e) {
+      if (!isPlainClick(e)) return;
+      // `pathOf()` normalise la barre finale : selon l'URL de base, le lien peut
+      // valoir « /depot » là où l'adresse courante vaut « /depot/ ».
+      if (pathOf(brand.href) !== pathOf(window.location.href)) return;
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   // ─── Amorçage ───────────────────────────────────────────────────────────────
   // `renderGrid()` n'est PAS appelée ici : la grille est déjà dans le HTML, la
   // rejouer annulerait les téléchargements que le navigateur a déjà lancés.
@@ -484,6 +503,7 @@
     wireGrid();
     serieNav.init();
     wireScrollDown();
+    wireHeader();
   }
 
   if (document.readyState === 'loading') {
